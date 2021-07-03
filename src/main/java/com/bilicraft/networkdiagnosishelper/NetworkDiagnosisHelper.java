@@ -1,20 +1,25 @@
 package com.bilicraft.networkdiagnosishelper;
 
 import com.google.gson.Gson;
+import jdk.vm.ci.hotspot.EventProvider;
 import net.md_5.bungee.api.connection.Connection;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
+import net.md_5.bungee.api.event.PlayerDisconnectEvent;
 import net.md_5.bungee.api.event.PluginMessageEvent;
 import net.md_5.bungee.api.event.PostLoginEvent;
 import net.md_5.bungee.api.plugin.Listener;
 import net.md_5.bungee.api.plugin.Plugin;
 import net.md_5.bungee.event.EventHandler;
+import net.md_5.bungee.event.EventPriority;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public final class NetworkDiagnosisHelper extends Plugin implements Listener {
-    private List<ProxiedPlayer> modInstalledPlayers = new ArrayList<>();
+    private Set<ProxiedPlayer> modInstalledPlayers = new HashSet<>();
     private final Gson gson = new Gson();
 
     @Override
@@ -30,8 +35,16 @@ public final class NetworkDiagnosisHelper extends Plugin implements Listener {
         getProxy().unregisterChannel("networkdiagnosis:command");
     }
 
-    @EventHandler
+    @EventHandler(priority = EventPriority.HIGHEST)
+    public void onDisconnect(PlayerDisconnectEvent event){
+        this.modInstalledPlayers.remove(event.getPlayer());
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST)
     public void onMessage(PluginMessageEvent event) {
+        if(event.isCancelled()){
+            return;
+        }
         try {
             if (event.getTag().equals("minecraft:register")) {
                 String registering = new String(event.getData(), StandardCharsets.UTF_8);
